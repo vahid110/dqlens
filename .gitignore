@@ -1,0 +1,39 @@
+# Internal docs — proposals, tracker, business strategy
+.internal/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# DQLens runtime (users generate these locally)
+.dqlens/
+
+# Build artifacts
+*.log
+build.log
