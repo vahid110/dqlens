@@ -9,13 +9,8 @@ from typing import Any
 
 import psycopg2.extensions
 
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    Finding,
-    CheckResult,
-    TableProfile,
-)
+from dqlens.models import (CheckResult, ColumnProfile, DatabaseProfile,
+                           Finding, TableProfile)
 
 
 class Dimension(enum.Enum):

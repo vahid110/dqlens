@@ -14,12 +14,8 @@ from typing import Any
 import yaml
 
 from dqlens.config import get_baselines_dir
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    ForeignKeyInfo,
-    TableProfile,
-)
+from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
+                           TableProfile)
 
 
 def save_profile(

@@ -9,7 +9,6 @@ from typing import Any
 
 import yaml
 
-
 DQLENS_DIR = ".dqlens"
 CONFIG_FILE = "config.yaml"
 BASELINES_DIR = "baselines"

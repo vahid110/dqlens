@@ -14,13 +14,8 @@ from typing import Any
 import psycopg2.extensions
 
 from dqlens import connector
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    ForeignKeyInfo,
-    TableProfile,
-)
-
+from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
+                           TableProfile)
 
 # Pattern detection regexes
 PATTERNS = {

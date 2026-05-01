@@ -13,26 +13,15 @@ That's it. The engine will automatically:
 from __future__ import annotations
 
 from dqlens.rules.base import Dimension, Rule
-from dqlens.rules.completeness import (
-    AllNullRule,
-    EmptyTableRule,
-    NotNullRule,
-    NullRateDriftRule,
-    PrimaryKeyNullRule,
-    RowCountDriftRule,
-)
+from dqlens.rules.completeness import (AllNullRule, EmptyTableRule,
+                                       NotNullRule, NullRateDriftRule,
+                                       PrimaryKeyNullRule, RowCountDriftRule)
 from dqlens.rules.consistency import ForeignKeyIntegrityRule
 from dqlens.rules.timeliness import FreshnessRule
 from dqlens.rules.uniqueness import UniqueColumnRule, UniquenessLostRule
-from dqlens.rules.validity import (
-    AllowedValuesRule,
-    PatternDriftRule,
-    PatternMatchRule,
-    PositiveValuesRule,
-    SemanticColumnRule,
-    ValueRangeDriftRule,
-)
-
+from dqlens.rules.validity import (AllowedValuesRule, PatternDriftRule,
+                                   PatternMatchRule, PositiveValuesRule,
+                                   SemanticColumnRule, ValueRangeDriftRule)
 
 # All registered rules. Order matters — rules are evaluated in this order.
 # Table-scoped rules first, then column-scoped.

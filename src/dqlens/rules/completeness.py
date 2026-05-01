@@ -4,12 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dqlens.models import (
-    CheckResult,
-    Finding,
-    FindingCategory,
-    Severity,
-)
+from dqlens.models import CheckResult, Finding, FindingCategory, Severity
 from dqlens.rules.base import Dimension, Rule, RuleContext
 
 

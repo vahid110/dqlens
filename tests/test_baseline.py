@@ -2,13 +2,10 @@
 
 from datetime import datetime, timezone
 
-from dqlens.baseline import (
-    get_baseline_count,
-    load_latest_profile,
-    load_previous_profile,
-    save_profile,
-)
-from dqlens.models import ColumnProfile, DatabaseProfile, ForeignKeyInfo, TableProfile
+from dqlens.baseline import (get_baseline_count, load_latest_profile,
+                             load_previous_profile, save_profile)
+from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
+                           TableProfile)
 
 
 def _make_profile(schema="public", tables=None):

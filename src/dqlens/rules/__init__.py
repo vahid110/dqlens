@@ -17,7 +17,7 @@ To add a new check: create a class inheriting from Rule, implement
 applies_to(), generate(), and evaluate(). Register it in RULES.
 """
 
-from dqlens.rules.base import Rule, RuleContext, Dimension
+from dqlens.rules.base import Dimension, Rule, RuleContext
 from dqlens.rules.registry import get_all_rules, get_rules_for_dimension
 
 __all__ = [

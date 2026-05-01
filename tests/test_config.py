@@ -5,13 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from dqlens.config import (
-    DQLensConfig,
-    add_ignore,
-    init_dqlens_dir,
-    load_config,
-    load_ignores,
-)
+from dqlens.config import (DQLensConfig, add_ignore, init_dqlens_dir,
+                           load_config, load_ignores)
 
 
 class TestDQLensConfig:

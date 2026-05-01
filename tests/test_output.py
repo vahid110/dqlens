@@ -2,14 +2,8 @@
 
 from datetime import datetime
 
-from dqlens.models import (
-    Finding,
-    FindingCategory,
-    RunResult,
-    Severity,
-    TableResult,
-    CheckResult,
-)
+from dqlens.models import (CheckResult, Finding, FindingCategory, RunResult,
+                           Severity, TableResult)
 from dqlens.output import format_json_result
 
 

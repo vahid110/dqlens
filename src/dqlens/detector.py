@@ -17,17 +17,9 @@ from typing import Any
 import psycopg2.extensions
 
 from dqlens import connector
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    Finding,
-    FindingCategory,
-    RunResult,
-    Severity,
-    TableProfile,
-    TableResult,
-    CheckResult,
-)
+from dqlens.models import (CheckResult, ColumnProfile, DatabaseProfile,
+                           Finding, FindingCategory, RunResult, Severity,
+                           TableProfile, TableResult)
 
 
 def detect_problems(

@@ -2,17 +2,9 @@
 
 from datetime import datetime
 
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    Finding,
-    FindingCategory,
-    RunResult,
-    Severity,
-    TableProfile,
-    TableResult,
-    CheckResult,
-)
+from dqlens.models import (CheckResult, ColumnProfile, DatabaseProfile,
+                           Finding, FindingCategory, RunResult, Severity,
+                           TableProfile, TableResult)
 
 
 def _make_column(**kwargs):

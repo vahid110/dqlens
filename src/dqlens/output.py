@@ -13,7 +13,6 @@ from rich.text import Text
 
 from dqlens.models import Finding, RunResult, Severity, TableResult
 
-
 console = Console()
 
 

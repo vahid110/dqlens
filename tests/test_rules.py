@@ -2,18 +2,17 @@
 
 from datetime import datetime, timedelta, timezone
 
-from dqlens.models import ColumnProfile, DatabaseProfile, ForeignKeyInfo, TableProfile
+from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
+                           TableProfile)
 from dqlens.rules.base import Dimension, RuleContext
-from dqlens.rules.registry import get_all_rules, get_column_rules, get_table_rules
-from dqlens.rules.completeness import EmptyTableRule, NotNullRule, NullRateDriftRule
-from dqlens.rules.uniqueness import UniqueColumnRule, UniquenessLostRule
-from dqlens.rules.validity import (
-    AllowedValuesRule,
-    PatternMatchRule,
-    PositiveValuesRule,
-    SemanticColumnRule,
-)
+from dqlens.rules.completeness import (EmptyTableRule, NotNullRule,
+                                       NullRateDriftRule)
+from dqlens.rules.registry import (get_all_rules, get_column_rules,
+                                   get_table_rules)
 from dqlens.rules.timeliness import FreshnessRule
+from dqlens.rules.uniqueness import UniqueColumnRule, UniquenessLostRule
+from dqlens.rules.validity import (AllowedValuesRule, PatternMatchRule,
+                                   PositiveValuesRule, SemanticColumnRule)
 
 
 def _col(**kwargs):

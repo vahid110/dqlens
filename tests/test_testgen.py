@@ -2,7 +2,8 @@
 
 from datetime import datetime, timezone
 
-from dqlens.models import ColumnProfile, DatabaseProfile, ForeignKeyInfo, TableProfile
+from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
+                           TableProfile)
 from dqlens.testgen import generate_tests, load_tests, save_tests
 
 

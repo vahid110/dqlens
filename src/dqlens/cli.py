@@ -97,7 +97,7 @@ def profile(
     from rich.console import Console
 
     from dqlens import connector, profiler
-    from dqlens.baseline import save_profile, get_baseline_count
+    from dqlens.baseline import get_baseline_count, save_profile
     from dqlens.config import load_config
 
     console = Console()
@@ -224,10 +224,11 @@ def run(
     from rich.console import Console
 
     from dqlens import connector, profiler
-    from dqlens.baseline import load_latest_profile, load_previous_profile, save_profile
+    from dqlens.baseline import (load_latest_profile, load_previous_profile,
+                                 save_profile)
     from dqlens.config import load_config, load_ignores
     from dqlens.detector import detect_problems
-    from dqlens.output import print_run_result, format_json_result
+    from dqlens.output import format_json_result, print_run_result
 
     console = Console()
 

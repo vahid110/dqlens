@@ -3,14 +3,8 @@
 from datetime import datetime, timedelta, timezone
 
 from dqlens.detector import detect_problems
-from dqlens.models import (
-    ColumnProfile,
-    DatabaseProfile,
-    FindingCategory,
-    ForeignKeyInfo,
-    Severity,
-    TableProfile,
-)
+from dqlens.models import (ColumnProfile, DatabaseProfile, FindingCategory,
+                           ForeignKeyInfo, Severity, TableProfile)
 
 
 def _col(**kwargs):
