@@ -14,10 +14,9 @@ Covers:
 from __future__ import annotations
 
 import pytest
-
 from markers import requires_postgres
-from dqlens import connector
 
+from dqlens import connector
 
 # ---------------------------------------------------------------------------
 # Fixtures: create test tables in an isolated schema

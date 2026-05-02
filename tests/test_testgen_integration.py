@@ -7,8 +7,8 @@ and roundtrips properly.
 from __future__ import annotations
 
 import pytest
-
 from markers import requires_postgres
+
 from dqlens import connector, profiler
 from dqlens.testgen import generate_tests, load_tests, save_tests
 

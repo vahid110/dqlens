@@ -11,8 +11,8 @@ import os
 
 import pytest
 from click.testing import CliRunner
-
 from markers import requires_postgres
+
 from dqlens.cli import main
 
 

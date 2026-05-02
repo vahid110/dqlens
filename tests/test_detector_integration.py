@@ -8,8 +8,8 @@ ignore filtering, and edge cases with real data.
 from __future__ import annotations
 
 import pytest
-
 from markers import requires_postgres
+
 from dqlens import connector, profiler
 from dqlens.detector import detect_problems
 from dqlens.models import FindingCategory, Severity

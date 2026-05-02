@@ -8,8 +8,8 @@ freshness detection, table filtering, and edge cases.
 from __future__ import annotations
 
 import pytest
-
 from markers import requires_postgres
+
 from dqlens import connector, profiler
 
 

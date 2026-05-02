@@ -9,15 +9,11 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from markers import requires_postgres
+
 from dqlens import connector, profiler
-from dqlens.baseline import (
-    get_baseline_count,
-    load_latest_profile,
-    load_previous_profile,
-    save_profile,
-)
+from dqlens.baseline import (get_baseline_count, load_latest_profile,
+                             load_previous_profile, save_profile)
 
 
 @pytest.fixture
