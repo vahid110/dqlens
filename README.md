@@ -80,8 +80,9 @@ for table in results:
 
 ## Supported Databases
 
-- PostgreSQL (Phase 1)
-- MySQL, SQLite, Parquet, CSV (Phase 2)
+- PostgreSQL
+- SQLite
+- MySQL, Parquet, CSV (coming soon)
 
 ## Development
 
