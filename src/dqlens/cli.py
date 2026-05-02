@@ -227,7 +227,7 @@ def run(
     from dqlens.baseline import (load_latest_profile, load_previous_profile,
                                  save_profile)
     from dqlens.config import load_config, load_ignores
-    from dqlens.detector import detect_problems
+    from dqlens.engine import run_checks
     from dqlens.output import format_json_result, print_run_result
 
     console = Console()
@@ -270,8 +270,8 @@ def run(
                 exclude_tables=config.exclude_tables or None,
             )
 
-            # Detect problems
-            result = detect_problems(
+            # Run checks via rule engine
+            result = run_checks(
                 current=current,
                 baseline=baseline,
                 conn=conn,

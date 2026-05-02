@@ -83,6 +83,28 @@ for table in results:
 - PostgreSQL (Phase 1)
 - MySQL, SQLite, Parquet, CSV (Phase 2)
 
+## Development
+
+```bash
+# Clone and install
+git clone https://github.com/vahid110/dqlens.git
+cd dqlens
+pip install -e ".[dev]"
+
+# Run unit tests (no database needed)
+pytest tests/ -k "unit" -v
+
+# Run integration tests (needs PostgreSQL — see .env.example)
+pytest tests/ -k "integration" -v
+
+# Run all tests
+pytest tests/ -v
+```
+
+### Demo
+
+See [demo/README.md](demo/README.md) for a 5-minute walkthrough with a local PostgreSQL database.
+
 ## License
 
 MIT
