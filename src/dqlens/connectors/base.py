@@ -122,3 +122,11 @@ class BaseConnector(ABC):
             "name", "citext", "tinytext", "mediumtext", "longtext",
         }
         return data_type.lower() in text_types
+
+    def get_sample_query_clause(self, table: str, schema: str, sample_size: int) -> str:
+        """Return a SQL clause for sampling rows. Override per database.
+
+        Default: LIMIT-based sampling (works everywhere but not random).
+        PostgreSQL overrides with TABLESAMPLE BERNOULLI.
+        """
+        return f"LIMIT {sample_size}"

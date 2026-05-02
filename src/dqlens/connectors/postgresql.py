@@ -261,6 +261,75 @@ class PostgreSQLConnector(BaseConnector):
             )
             return [row[0] for row in cur.fetchall()]
 
+    def get_sample_query_clause(self, table: str, schema: str, sample_size: int) -> str:
+        """PostgreSQL uses TABLESAMPLE BERNOULLI for fast random sampling."""
+        # Estimate percentage needed to get ~sample_size rows
+        # We'll use a generous percentage and LIMIT to be safe
+        return f"TABLESAMPLE BERNOULLI(10) LIMIT {sample_size}"
+
+    def get_sampled_column_details(
+        self, conn: Any, schema: str, table: str, column: str,
+        data_type: str, sample_size: int = 10000,
+    ) -> dict[str, Any]:
+        """Get column stats from a sample using TABLESAMPLE."""
+        sch = psycopg2.extensions.quote_ident(schema, conn.cursor())
+        tbl = psycopg2.extensions.quote_ident(table, conn.cursor())
+        col = psycopg2.extensions.quote_ident(column, conn.cursor())
+
+        # Calculate sample percentage — aim for sample_size rows
+        # Use a subquery with TABLESAMPLE
+        sample_clause = f"{sch}.{tbl} TABLESAMPLE BERNOULLI(10)"
+
+        result: dict[str, Any] = {}
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COUNT(*) AS total, "
+                f"SUM(CASE WHEN {col} IS NULL THEN 1 ELSE 0 END) AS nulls, "
+                f"COUNT(DISTINCT {col}) AS distinct_count "
+                f"FROM {sample_clause}"
+            )
+            row = cur.fetchone()
+            if row:
+                result["total"] = row[0]
+                result["null_count"] = row[1] or 0
+                result["distinct_count"] = row[2]
+
+            if self.is_numeric_type(data_type):
+                cur.execute(
+                    f"SELECT MIN({col}), MAX({col}), AVG({col}), STDDEV({col}) "
+                    f"FROM {sample_clause} WHERE {col} IS NOT NULL"
+                )
+                row = cur.fetchone()
+                if row:
+                    result["min_value"] = _safe_float(row[0])
+                    result["max_value"] = _safe_float(row[1])
+                    result["mean_value"] = _safe_float(row[2])
+                    result["stddev"] = _safe_float(row[3])
+
+            elif self.is_temporal_type(data_type):
+                cur.execute(
+                    f"SELECT MIN({col}), MAX({col}) "
+                    f"FROM {sample_clause} WHERE {col} IS NOT NULL"
+                )
+                row = cur.fetchone()
+                if row:
+                    result["min_value"] = str(row[0]) if row[0] else None
+                    result["max_value"] = str(row[1]) if row[1] else None
+
+            elif self.is_text_type(data_type):
+                cur.execute(
+                    f"SELECT MIN(LENGTH({col})), MAX(LENGTH({col})), AVG(LENGTH({col})) "
+                    f"FROM {sample_clause} WHERE {col} IS NOT NULL"
+                )
+                row = cur.fetchone()
+                if row:
+                    result["min_length"] = row[0]
+                    result["max_length"] = row[1]
+                    result["avg_length"] = _safe_float(row[2])
+
+        return result
+
 
 def _safe_float(val: Any) -> float | None:
     if val is None:

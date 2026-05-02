@@ -41,6 +41,7 @@ def profile_database(
     schema: str = "public",
     tables: list[str] | None = None,
     exclude_tables: list[str] | None = None,
+    quick: bool = False,
 ) -> DatabaseProfile:
     """Profile all tables in a database schema.
 
@@ -50,6 +51,7 @@ def profile_database(
         schema: Schema to profile.
         tables: If provided, only profile these tables.
         exclude_tables: If provided, exclude these tables (supports glob patterns).
+        quick: If True, sample data instead of scanning full tables.
 
     Returns:
         DatabaseProfile with all table profiles.
@@ -94,6 +96,7 @@ def profile_database(
             foreign_keys=fk_lookup.get(table_name, []),
             primary_key_columns=primary_keys.get(table_name, []),
             unique_columns=unique_indexes.get(table_name, set()),
+            quick=quick,
         )
         table_profiles.append(profile)
 
@@ -114,9 +117,16 @@ def _profile_table(
     foreign_keys: list[ForeignKeyInfo],
     primary_key_columns: list[str],
     unique_columns: set[str],
+    quick: bool = False,
 ) -> TableProfile:
     """Profile a single table."""
-    if estimated_rows < 100_000:
+    if quick:
+        # Quick mode: use pg_class estimate, don't scan
+        row_count = max(estimated_rows, 0)
+        if row_count == 0:
+            # Even in quick mode, get exact count for small/empty tables
+            row_count = db.get_exact_row_count(conn, schema, table_name)
+    elif estimated_rows < 100_000:
         row_count = db.get_exact_row_count(conn, schema, table_name)
     else:
         row_count = max(estimated_rows, 0)
@@ -130,7 +140,13 @@ def _profile_table(
         data_type = col_meta["data_type"]
         nullable = col_meta["is_nullable"] == "YES"
 
-        details = db.get_column_details(conn, schema, table_name, col_name, data_type)
+        # Get column stats — sampled in quick mode, full scan otherwise
+        if quick and hasattr(db, "get_sampled_column_details"):
+            details = db.get_sampled_column_details(
+                conn, schema, table_name, col_name, data_type
+            )
+        else:
+            details = db.get_column_details(conn, schema, table_name, col_name, data_type)
 
         total = details.get("total", row_count)
         null_count = details.get("null_count", 0)

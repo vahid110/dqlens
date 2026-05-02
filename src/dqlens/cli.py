@@ -79,11 +79,13 @@ def init(connection_url: str, schema: str, tables: str | None, exclude: str | No
 @click.option("--schema", "-s", default=None, help="Override schema.")
 @click.option("--tables", "-t", default=None, help="Comma-separated tables to profile.")
 @click.option("--exclude", "-e", default=None, help="Comma-separated table patterns to exclude.")
+@click.option("--quick", "-q", is_flag=True, help="Quick mode: sample data instead of full scan.")
 def profile(
     connection: str | None,
     schema: str | None,
     tables: str | None,
     exclude: str | None,
+    quick: bool,
 ):
     """Profile database tables and save a baseline.
 
@@ -94,6 +96,7 @@ def profile(
     Example:
         dqlens profile
         dqlens profile --tables orders,customers
+        dqlens profile --quick
     """
     from rich.console import Console
 
@@ -136,7 +139,8 @@ def profile(
         else config.exclude_tables or None
     )
 
-    console.print(f"\n[bold]Profiling schema '{schema_name}'...[/bold]\n")
+    mode_label = "[yellow]quick mode (sampled)[/yellow]" if quick else ""
+    console.print(f"\n[bold]Profiling schema '{schema_name}'...[/bold] {mode_label}\n")
 
     try:
         db = get_connector(conn_url)
@@ -147,6 +151,7 @@ def profile(
                 schema=schema_name,
                 tables=table_list,
                 exclude_tables=exclude_list,
+                quick=quick,
             )
     except Exception as e:
         click.echo(f"Error connecting to database: {e}", err=True)

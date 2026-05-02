@@ -57,6 +57,7 @@ Every finding includes:
 |---|---|
 | `dqlens init <url>` | Initialize config with database connection |
 | `dqlens profile` | Profile tables and save baseline |
+| `dqlens profile --quick` | Quick mode: sample data, under 5 seconds |
 | `dqlens run` | Run checks, show problems |
 | `dqlens run --verbose` | Show all checks including passing |
 | `dqlens run --focus high` | Only HIGH severity findings |

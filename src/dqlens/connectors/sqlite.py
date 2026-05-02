@@ -209,6 +209,51 @@ class SQLiteConnector(BaseConnector):
         dt = data_type.lower()
         return dt in {"date", "datetime", "timestamp"}
 
+    def get_sampled_column_details(
+        self, conn: Any, schema: str, table: str, column: str,
+        data_type: str, sample_size: int = 10000,
+    ) -> dict[str, Any]:
+        """Get column stats from a random sample."""
+        result: dict[str, Any] = {}
+        col_q = f'"{column}"'
+        sample_clause = f'"{table}" ORDER BY RANDOM() LIMIT {sample_size}'
+
+        cur = conn.execute(
+            f'SELECT COUNT(*) AS total, '
+            f'SUM(CASE WHEN {col_q} IS NULL THEN 1 ELSE 0 END) AS nulls, '
+            f'COUNT(DISTINCT {col_q}) AS distinct_count '
+            f'FROM (SELECT * FROM {sample_clause})'
+        )
+        row = cur.fetchone()
+        if row:
+            result["total"] = row[0]
+            result["null_count"] = row[1] or 0
+            result["distinct_count"] = row[2]
+
+        if self.is_numeric_type(data_type):
+            cur = conn.execute(
+                f'SELECT MIN({col_q}), MAX({col_q}), AVG({col_q}) '
+                f'FROM (SELECT * FROM {sample_clause}) WHERE {col_q} IS NOT NULL'
+            )
+            row = cur.fetchone()
+            if row:
+                result["min_value"] = _safe_float(row[0])
+                result["max_value"] = _safe_float(row[1])
+                result["mean_value"] = _safe_float(row[2])
+
+        elif self.is_text_type(data_type):
+            cur = conn.execute(
+                f'SELECT MIN(LENGTH({col_q})), MAX(LENGTH({col_q})), AVG(LENGTH({col_q})) '
+                f'FROM (SELECT * FROM {sample_clause}) WHERE {col_q} IS NOT NULL'
+            )
+            row = cur.fetchone()
+            if row:
+                result["min_length"] = row[0]
+                result["max_length"] = row[1]
+                result["avg_length"] = _safe_float(row[2])
+
+        return result
+
 
 def _normalize_sqlite_type(raw_type: str) -> str:
     """Normalize SQLite type affinity to a standard name."""
