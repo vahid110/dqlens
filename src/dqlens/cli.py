@@ -96,9 +96,10 @@ def profile(
     """
     from rich.console import Console
 
-    from dqlens import connector, profiler
+    from dqlens import profiler_v2
     from dqlens.baseline import get_baseline_count, save_profile
     from dqlens.config import load_config
+    from dqlens.connectors import get_connector
 
     console = Console()
 
@@ -137,8 +138,10 @@ def profile(
     console.print(f"\n[bold]Profiling schema '{schema_name}'...[/bold]\n")
 
     try:
-        with connector.connect(conn_url) as conn:
-            db_profile = profiler.profile_database(
+        db = get_connector(conn_url)
+        with db.connect() as conn:
+            db_profile = profiler_v2.profile_database(
+                db=db,
                 conn=conn,
                 schema=schema_name,
                 tables=table_list,
@@ -223,10 +226,11 @@ def run(
     """
     from rich.console import Console
 
-    from dqlens import connector, profiler
+    from dqlens import profiler_v2
     from dqlens.baseline import (load_latest_profile, load_previous_profile,
                                  save_profile)
     from dqlens.config import load_config, load_ignores
+    from dqlens.connectors import get_connector
     from dqlens.engine import run_checks
     from dqlens.output import format_json_result, print_run_result
 
@@ -261,9 +265,11 @@ def run(
             )
 
     try:
-        with connector.connect(conn_url) as conn:
+        db = get_connector(conn_url)
+        with db.connect() as conn:
             # Profile current state
-            current = profiler.profile_database(
+            current = profiler_v2.profile_database(
+                db=db,
                 conn=conn,
                 schema=schema_name,
                 tables=config.tables or None,

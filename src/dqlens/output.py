@@ -20,6 +20,7 @@ def print_run_result(
     result: RunResult,
     verbose: bool = False,
     focus: str | None = None,
+    tabular: bool = True,
 ) -> None:
     """Print run results to the terminal.
 
@@ -27,20 +28,93 @@ def print_run_result(
         result: The run results.
         verbose: If True, show all tests including passing ones.
         focus: Filter mode — 'problems', 'high', or None (default = problems).
+        tabular: Kept for backward compat. Always uses table format.
     """
     if not result.tables:
         console.print("\n[yellow]No tables found to check.[/yellow]\n")
         return
 
-    console.print()
-
-    for table_result in result.tables:
-        _print_table_result(table_result, verbose, focus)
+    _print_tabular(result, verbose, focus)
 
     # Summary
     console.print()
     _print_summary(result)
     console.print()
+
+
+def _print_tabular(
+    result: RunResult,
+    verbose: bool,
+    focus: str | None,
+) -> None:
+    """Print results in a compact table format."""
+    # Collect all findings across tables
+    all_findings = []
+    for table_result in result.tables:
+        for f in table_result.findings:
+            if focus == "high" and f.severity != Severity.HIGH:
+                continue
+            all_findings.append((table_result.table_name, f))
+
+    if all_findings:
+        console.print()
+        findings_table = Table(
+            title="Problems Found",
+            show_lines=False,
+            pad_edge=False,
+            box=None,
+        )
+        findings_table.add_column("Severity", style="bold", width=8)
+        findings_table.add_column("Table", style="cyan", max_width=25)
+        findings_table.add_column("Column", max_width=20)
+        findings_table.add_column("Problem")
+
+        severity_styles = {
+            Severity.HIGH: "bold red",
+            Severity.MEDIUM: "yellow",
+            Severity.LOW: "dim",
+        }
+
+        for table_name, f in all_findings:
+            short_table = table_name.split(".")[-1] if "." in table_name else table_name
+            findings_table.add_row(
+                Text(f.severity.value, style=severity_styles.get(f.severity, "")),
+                short_table,
+                f.column or "-",
+                f.message,
+            )
+
+        console.print(findings_table)
+
+    if verbose:
+        console.print()
+        passed_table = Table(
+            title="Passed Checks",
+            show_lines=False,
+            pad_edge=False,
+            box=None,
+        )
+        passed_table.add_column("", width=3)
+        passed_table.add_column("Table", style="cyan", max_width=25)
+        passed_table.add_column("Column", max_width=20)
+        passed_table.add_column("Check")
+
+        for table_result in result.tables:
+            for p in table_result.passed_tests:
+                short_table = table_result.table_name.split(".")[-1]
+                passed_table.add_row(
+                    "[green]✓[/green]",
+                    short_table,
+                    p.column or "-",
+                    p.message,
+                )
+
+        console.print(passed_table)
+    elif any(t.passed_count > 0 for t in result.tables):
+        total_passed = sum(t.passed_count for t in result.tables)
+        console.print(
+            f"\n[dim]  ✓ {total_passed} checks passed (use --verbose to see all)[/dim]"
+        )
 
 
 def _print_table_result(
