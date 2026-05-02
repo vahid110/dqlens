@@ -4,6 +4,7 @@ Commands:
     dqlens init      — Initialize .dqlens/ directory with connection config
     dqlens profile   — Profile database tables and save baseline
     dqlens run       — Run tests against live database, show problems
+    dqlens diff      — Compare two profiles to see what changed
     dqlens ignore    — Suppress a known finding
 """
 
@@ -299,6 +300,44 @@ def run(
     # CI exit code
     if ci and result.has_problems:
         sys.exit(1)
+
+
+@main.command()
+@click.option("--json-output", "json_out", is_flag=True, help="Output diff as JSON.")
+def diff(json_out: bool):
+    """Compare the two most recent profiles to see what changed.
+
+    Shows schema changes (tables/columns added/removed), row count
+    shifts, null rate drift, uniqueness changes, and value range shifts.
+
+    Examples:
+        dqlens diff
+        dqlens diff --json-output
+    """
+    from dqlens.baseline import load_latest_profile, load_previous_profile
+    from dqlens.diff import diff_profiles, format_diff_json, format_diff_text
+
+    latest = load_latest_profile()
+    previous = load_previous_profile()
+
+    if latest is None:
+        click.echo("Error: No profiles found. Run 'dqlens profile' first.", err=True)
+        sys.exit(1)
+
+    if previous is None:
+        click.echo(
+            "Error: Only one profile found. Run 'dqlens profile' again to "
+            "create a second profile for comparison.",
+            err=True,
+        )
+        sys.exit(1)
+
+    result = diff_profiles(before=previous, after=latest)
+
+    if json_out:
+        print(json.dumps(format_diff_json(result), indent=2))
+    else:
+        click.echo(format_diff_text(result))
 
 
 @main.command()

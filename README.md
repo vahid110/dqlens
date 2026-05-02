@@ -62,6 +62,8 @@ Every finding includes:
 | `dqlens run --focus high` | Only HIGH severity findings |
 | `dqlens run --ci` | Exit code 1 on failure (for CI/CD) |
 | `dqlens run --json-output` | Output as JSON |
+| `dqlens diff` | Compare two most recent profiles |
+| `dqlens diff --json-output` | Diff as JSON |
 | `dqlens ignore <key>` | Suppress a known finding |
 
 ## Python API
