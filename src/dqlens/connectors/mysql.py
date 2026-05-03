@@ -5,16 +5,25 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Generator
 
-import pymysql
-import pymysql.cursors
-
 from dqlens.connectors.base import BaseConnector
+
+try:
+    import pymysql
+    import pymysql.cursors
+    HAS_PYMYSQL = True
+except ImportError:
+    HAS_PYMYSQL = False
 
 
 class MySQLConnector(BaseConnector):
     """MySQL/MariaDB connector using information_schema."""
 
     def __init__(self, connection_url: str):
+        if not HAS_PYMYSQL:
+            raise ImportError(
+                "pymysql is required for MySQL support. "
+                "Install it with: pip install dqlens[mysql]"
+            )
         self.connection_url = connection_url
         self._params = _parse_mysql_url(connection_url)
 
