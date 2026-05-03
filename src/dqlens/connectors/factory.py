@@ -48,12 +48,10 @@ def get_connector(connection_url: str) -> BaseConnector:
         from dqlens.connectors.sqlite import SQLiteConnector
         return SQLiteConnector(str(path))
 
-    # MySQL (placeholder)
+    # MySQL
     if url.startswith(("mysql://", "mysql+pymysql://")):
-        raise ValueError(
-            "MySQL support is not yet implemented. "
-            "Supported: postgresql://, sqlite:///, *.db"
-        )
+        from dqlens.connectors.mysql import MySQLConnector
+        return MySQLConnector(url)
 
     raise ValueError(
         f"Unsupported connection URL: {url}\n"

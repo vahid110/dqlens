@@ -49,9 +49,9 @@ class TestGetConnector:
         with pytest.raises(ValueError, match="Unsupported"):
             get_connector("mongodb://localhost/db")
 
-    def test_mysql_not_implemented(self):
-        with pytest.raises(ValueError, match="MySQL"):
-            get_connector("mysql://localhost/db")
+    def test_mysql_url(self):
+        c = get_connector("mysql://localhost/db")
+        assert c.__class__.__name__ == "MySQLConnector"
 
     def test_whitespace_stripped(self):
         c = get_connector("  postgresql://localhost/db  ")

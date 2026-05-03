@@ -85,7 +85,8 @@ for table in results:
 
 - PostgreSQL
 - SQLite
-- MySQL, Parquet, CSV (coming soon)
+- MySQL
+- Parquet, CSV (coming soon)
 
 ## Development
 
