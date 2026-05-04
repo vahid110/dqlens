@@ -1,6 +1,6 @@
 # DQLens
 
-> Find data problems automatically — no config, no test writing.
+> Find data problems automatically. No config, no test writing.
 
 DQLens auto-generates data quality tests by profiling your database. No YAML, no Python, no configuration files. Just point it at your database and get instant visibility into data quality issues.
 
@@ -23,13 +23,13 @@ dqlens run
 
 DQLens connects to your database, profiles every table, and automatically generates tests based on what it finds:
 
-- **Null anomalies** — detects columns with unexpected null rates or null rate drift
-- **Uniqueness violations** — finds duplicate values in columns that should be unique
-- **Foreign key mismatches** — discovers orphaned rows referencing non-existent records
-- **Pattern violations** — identifies columns where values don't match detected patterns (email, UUID, URL, etc.)
-- **Row count anomalies** — flags unusual growth or shrinkage compared to baseline
-- **Freshness checks** — alerts when data hasn't been updated recently
-- **Distribution shifts** — catches value range changes between profiles
+- **Null anomalies**: columns with unexpected null rates or null rate drift
+- **Uniqueness violations**: duplicate values in columns that should be unique
+- **Foreign key mismatches**: orphaned rows referencing non-existent records
+- **Pattern violations**: values that don't match detected patterns (email, UUID, URL, etc.)
+- **Row count anomalies**: unusual growth or shrinkage compared to baseline
+- **Freshness checks**: data that hasn't been updated recently
+- **Distribution shifts**: value range changes between profiles
 
 ## Signal Over Coverage
 
@@ -40,7 +40,7 @@ public.orders: 14 tests, 11 passed, 3 PROBLEMS FOUND
 
   PROBLEMS:
   HIGH   customer_id: 142 rows reference non-existent customers (FK mismatch)
-  HIGH   email: 3.2% null (was 0.1% in baseline) — 32x increase
+  HIGH   email: 3.2% null (was 0.1% in baseline), 32x increase
   MEDIUM orders grew 47% today (usual daily growth: 2-5%)
 
   ✓ 11 checks passed (use --verbose to see all)
@@ -99,7 +99,7 @@ pip install -e ".[dev]"
 # Run unit tests (no database needed)
 pytest tests/ -k "unit" -v
 
-# Run integration tests (needs PostgreSQL — see .env.example)
+# Run integration tests (needs PostgreSQL, see .env.example)
 pytest tests/ -k "integration" -v
 
 # Run all tests

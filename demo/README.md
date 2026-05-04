@@ -52,7 +52,7 @@ dqlens profile
 
 DQLens connects to your database, profiles every table (row counts, nulls,
 uniqueness, patterns, foreign keys, freshness), and saves the results as a
-baseline. It also generates `.dqlens/tests.yaml` — an inspectable file listing
+baseline. It also generates `.dqlens/tests.yaml`, an inspectable file listing
 every check it will run and why.
 
 Expected output:
@@ -126,7 +126,7 @@ This shows every check DQLens ran, not just the failures.
 dqlens run --focus high
 ```
 
-Only shows HIGH severity findings — useful for CI gates.
+Only shows HIGH severity findings. Useful for CI gates.
 
 ## 7. Simulate data degradation (drift detection)
 
