@@ -13,15 +13,17 @@ That's it. The engine will automatically:
 from __future__ import annotations
 
 from dqlens.rules.base import Dimension, Rule
-from dqlens.rules.completeness import (AllNullRule, EmptyTableRule,
-                                       NotNullRule, NullRateDriftRule,
-                                       PrimaryKeyNullRule, RowCountDriftRule)
-from dqlens.rules.consistency import ForeignKeyIntegrityRule
+from dqlens.rules.completeness import (AllNullRule, EmptyStringRule,
+                                       EmptyTableRule, NotNullRule,
+                                       NullRateDriftRule, PrimaryKeyNullRule,
+                                       RowCountDriftRule)
+from dqlens.rules.consistency import ForeignKeyIntegrityRule, SchemaDriftRule
 from dqlens.rules.timeliness import FreshnessRule
 from dqlens.rules.uniqueness import UniqueColumnRule, UniquenessLostRule
-from dqlens.rules.validity import (AllowedValuesRule, PatternDriftRule,
-                                   PatternMatchRule, PositiveValuesRule,
-                                   SemanticColumnRule, ValueRangeDriftRule)
+from dqlens.rules.validity import (AllowedValuesRule, OutlierRule,
+                                   PatternDriftRule, PatternMatchRule,
+                                   PositiveValuesRule, SemanticColumnRule,
+                                   ValueRangeDriftRule)
 
 # All registered rules. Order matters — rules are evaluated in this order.
 # Table-scoped rules first, then column-scoped.
@@ -30,12 +32,14 @@ RULES: list[Rule] = [
     EmptyTableRule(),
     RowCountDriftRule(),
     ForeignKeyIntegrityRule(),
+    SchemaDriftRule(),
     FreshnessRule(),
     # Column-scoped: completeness
     NotNullRule(),
     NullRateDriftRule(),
     AllNullRule(),
     PrimaryKeyNullRule(),
+    EmptyStringRule(),
     # Column-scoped: uniqueness
     UniqueColumnRule(),
     UniquenessLostRule(),
@@ -45,6 +49,7 @@ RULES: list[Rule] = [
     PositiveValuesRule(),
     AllowedValuesRule(),
     ValueRangeDriftRule(),
+    OutlierRule(),
     SemanticColumnRule(),
 ]
 

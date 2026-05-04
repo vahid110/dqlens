@@ -160,7 +160,11 @@ class PostgreSQLConnector(BaseConnector):
 
             if self.is_numeric_type(data_type):
                 cur.execute(
-                    f"SELECT MIN({col}), MAX({col}), AVG({col}), STDDEV({col}) "
+                    f"SELECT MIN({col}), MAX({col}), AVG({col}), STDDEV({col}), "
+                    f"PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY {col}), "
+                    f"PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY {col}), "
+                    f"PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY {col}), "
+                    f"PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY {col}) "
                     f"FROM {sch}.{tbl} WHERE {col} IS NOT NULL"
                 )
                 row = cur.fetchone()
@@ -169,6 +173,10 @@ class PostgreSQLConnector(BaseConnector):
                     result["max_value"] = _safe_float(row[1])
                     result["mean_value"] = _safe_float(row[2])
                     result["stddev"] = _safe_float(row[3])
+                    result["p25"] = _safe_float(row[4])
+                    result["p50"] = _safe_float(row[5])
+                    result["p75"] = _safe_float(row[6])
+                    result["p95"] = _safe_float(row[7])
 
             elif self.is_temporal_type(data_type):
                 cur.execute(
@@ -182,7 +190,9 @@ class PostgreSQLConnector(BaseConnector):
 
             elif self.is_text_type(data_type):
                 cur.execute(
-                    f"SELECT MIN(LENGTH({col})), MAX(LENGTH({col})), AVG(LENGTH({col})) "
+                    f"SELECT MIN(LENGTH({col})), MAX(LENGTH({col})), "
+                    f"AVG(LENGTH({col})), "
+                    f"COUNT(*) FILTER (WHERE {col} = '') "
                     f"FROM {sch}.{tbl} WHERE {col} IS NOT NULL"
                 )
                 row = cur.fetchone()
@@ -190,6 +200,7 @@ class PostgreSQLConnector(BaseConnector):
                     result["min_length"] = row[0]
                     result["max_length"] = row[1]
                     result["avg_length"] = _safe_float(row[2])
+                    result["empty_string_count"] = row[3] or 0
 
         return result
 

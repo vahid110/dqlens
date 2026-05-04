@@ -394,3 +394,95 @@ class SemanticColumnRule(Rule):
             passed=True,
             message=f"within expected {rule['label']} range",
         )
+
+
+class OutlierRule(Rule):
+    """Flag numeric columns with values beyond 1.5x IQR.
+
+    Uses percentiles (p25, p75) to compute interquartile range.
+    Values below Q1 - 1.5*IQR or above Q3 + 1.5*IQR are outliers.
+    """
+
+    name = "outlier_iqr"
+    dimension = Dimension.VALIDITY
+    scope = "column"
+
+    def applies_to(self, ctx: RuleContext) -> bool:
+        return (
+            ctx.column is not None
+            and ctx.column.p25 is not None
+            and ctx.column.p75 is not None
+            and ctx.column.min_value is not None
+            and ctx.column.max_value is not None
+        )
+
+    def generate(self, ctx: RuleContext) -> dict[str, Any]:
+        iqr = ctx.column.p75 - ctx.column.p25
+        lower = ctx.column.p25 - 1.5 * iqr
+        upper = ctx.column.p75 + 1.5 * iqr
+        return {
+            "check": "outlier_iqr",
+            "column": ctx.column.name,
+            "expect": "within_iqr_bounds",
+            "p25": ctx.column.p25,
+            "p75": ctx.column.p75,
+            "iqr": iqr,
+            "lower_bound": lower,
+            "upper_bound": upper,
+            "reason": (
+                f"IQR bounds: [{lower:.2f}, {upper:.2f}]. "
+                f"Values outside this range are statistical outliers."
+            ),
+        }
+
+    def evaluate(self, ctx: RuleContext) -> Finding | CheckResult | None:
+        if ctx.column is None:
+            return None
+        if ctx.column.p25 is None or ctx.column.p75 is None:
+            return None
+        if ctx.column.min_value is None or ctx.column.max_value is None:
+            return None
+
+        try:
+            p25 = float(ctx.column.p25)
+            p75 = float(ctx.column.p75)
+            min_val = float(ctx.column.min_value)
+            max_val = float(ctx.column.max_value)
+        except (TypeError, ValueError):
+            return None
+
+        iqr = p75 - p25
+        if iqr == 0:
+            return None  # No spread, can't compute meaningful bounds
+
+        lower = p25 - 1.5 * iqr
+        upper = p75 + 1.5 * iqr
+
+        violations = []
+        if min_val < lower:
+            violations.append(f"min {min_val:.2f} below lower bound {lower:.2f}")
+        if max_val > upper:
+            violations.append(f"max {max_val:.2f} above upper bound {upper:.2f}")
+
+        if violations:
+            return Finding(
+                table=ctx.table.full_name,
+                column=ctx.column.name,
+                severity=Severity.LOW,
+                category=FindingCategory.DISTRIBUTION_SHIFT,
+                message=f"Outliers detected: {', '.join(violations)}",
+                detail=(
+                    f"Flagged because: values fall outside 1.5x IQR bounds "
+                    f"[{lower:.2f}, {upper:.2f}] (IQR={iqr:.2f}, "
+                    f"p25={p25:.2f}, p75={p75:.2f})."
+                ),
+                current_value=f"[{min_val}, {max_val}]",
+            )
+
+        return CheckResult(
+            table=ctx.table.full_name,
+            column=ctx.column.name,
+            test_name="outlier_iqr",
+            passed=True,
+            message=f"no outliers (IQR bounds: [{lower:.2f}, {upper:.2f}])",
+        )

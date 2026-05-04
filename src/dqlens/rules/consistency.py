@@ -90,3 +90,98 @@ class ForeignKeyIntegrityRule(Rule):
                 ))
 
         return results
+
+
+class SchemaDriftRule(Rule):
+    """Detect schema changes between profiles: columns added, removed, or type changed."""
+
+    name = "schema_drift"
+    dimension = Dimension.CONSISTENCY
+    scope = "table"
+
+    def applies_to(self, ctx: RuleContext) -> bool:
+        return ctx.baseline_table is not None and len(ctx.table.columns) > 0
+
+    def generate(self, ctx: RuleContext) -> dict[str, Any]:
+        return {
+            "check": "schema_drift",
+            "expect": "schema_stable",
+            "column_count": len(ctx.table.columns),
+            "reason": (
+                f"Table has {len(ctx.table.columns)} columns. "
+                f"Flag if columns are added, removed, or change type between profiles."
+            ),
+        }
+
+    def evaluate(self, ctx: RuleContext) -> list[Finding | CheckResult]:
+        results: list[Finding | CheckResult] = []
+        if ctx.baseline_table is None:
+            return results
+
+        current_cols = {c.name: c for c in ctx.table.columns}
+        baseline_cols = {c.name: c for c in ctx.baseline_table.columns}
+
+        current_names = set(current_cols.keys())
+        baseline_names = set(baseline_cols.keys())
+
+        added = current_names - baseline_names
+        removed = baseline_names - current_names
+
+        for col_name in added:
+            results.append(Finding(
+                table=ctx.table.full_name,
+                column=col_name,
+                severity=Severity.LOW,
+                category=FindingCategory.SCHEMA_CHANGE,
+                message=f"Column added since last profile (type: {current_cols[col_name].data_type})",
+                detail=(
+                    f"Flagged because: column '{col_name}' exists now but was not "
+                    f"present in the previous profile. This may indicate a schema "
+                    f"migration or upstream change."
+                ),
+            ))
+
+        for col_name in removed:
+            results.append(Finding(
+                table=ctx.table.full_name,
+                column=col_name,
+                severity=Severity.HIGH,
+                category=FindingCategory.SCHEMA_CHANGE,
+                message=f"Column removed since last profile (was type: {baseline_cols[col_name].data_type})",
+                detail=(
+                    f"Flagged because: column '{col_name}' was present in the "
+                    f"previous profile but is now missing. This may break "
+                    f"downstream queries or dashboards."
+                ),
+            ))
+
+        # Check type changes for columns that still exist
+        for col_name in current_names & baseline_names:
+            cur_type = current_cols[col_name].data_type
+            bl_type = baseline_cols[col_name].data_type
+            if cur_type != bl_type:
+                results.append(Finding(
+                    table=ctx.table.full_name,
+                    column=col_name,
+                    severity=Severity.HIGH,
+                    category=FindingCategory.TYPE_MISMATCH,
+                    message=f"Column type changed: {bl_type} -> {cur_type}",
+                    detail=(
+                        f"Flagged because: column '{col_name}' changed type from "
+                        f"'{bl_type}' to '{cur_type}' since last profile. "
+                        f"This may break downstream transformations."
+                    ),
+                    current_value=cur_type,
+                    baseline_value=bl_type,
+                ))
+
+        if not results:
+            results.append(CheckResult(
+                table=ctx.table.full_name,
+                column=None,
+                test_name="schema_drift",
+                passed=True,
+                message=f"schema stable ({len(current_cols)} columns, no changes)",
+            ))
+
+        return results

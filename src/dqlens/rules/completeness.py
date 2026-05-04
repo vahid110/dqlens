@@ -299,3 +299,72 @@ class PrimaryKeyNullRule(Rule):
                 current_value=ctx.column.null_pct,
             )
         return None
+
+
+class EmptyStringRule(Rule):
+    """Flag text columns with high empty string rates.
+
+    Columns full of '' look "not null" but are effectively missing data.
+    """
+
+    name = "empty_string_rate"
+    dimension = Dimension.COMPLETENESS
+    scope = "column"
+
+    def applies_to(self, ctx: RuleContext) -> bool:
+        return (
+            ctx.column is not None
+            and ctx.column.empty_string_count > 0
+            and ctx.column.row_count > 0
+        )
+
+    def generate(self, ctx: RuleContext) -> dict[str, Any]:
+        return {
+            "check": "empty_string_rate",
+            "column": ctx.column.name,
+            "expect": "below",
+            "value": 30,
+            "unit": "percent",
+            "current": ctx.column.empty_string_pct,
+            "reason": (
+                f"Column has {ctx.column.empty_string_pct}% empty strings "
+                f"({ctx.column.empty_string_count:,} of "
+                f"{ctx.column.non_null_count:,} non-null values). "
+                f"Empty strings look non-null but carry no information."
+            ),
+        }
+
+    def evaluate(self, ctx: RuleContext) -> Finding | CheckResult | None:
+        if ctx.column is None or ctx.column.empty_string_count == 0:
+            return None
+
+        pct = ctx.column.empty_string_pct
+
+        if pct >= 60:
+            severity = Severity.HIGH
+        elif pct >= 30:
+            severity = Severity.MEDIUM
+        else:
+            return CheckResult(
+                table=ctx.table.full_name,
+                column=ctx.column.name,
+                test_name="empty_string_rate",
+                passed=True,
+                message=f"empty string rate {pct}% (below threshold)",
+            )
+
+        return Finding(
+            table=ctx.table.full_name,
+            column=ctx.column.name,
+            severity=severity,
+            category=FindingCategory.NULL_ANOMALY,
+            message=(
+                f"{pct}% empty strings "
+                f"({ctx.column.empty_string_count:,} values)"
+            ),
+            detail=(
+                f"Flagged because: {pct}% of non-null values are empty strings. "
+                f"These pass not-null checks but carry no information."
+            ),
+            current_value=pct,
+        )

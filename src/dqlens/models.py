@@ -52,6 +52,12 @@ class ColumnProfile:
     mean_value: float | None = None
     median_value: float | None = None
     stddev: float | None = None
+    p25: float | None = None
+    p50: float | None = None
+    p75: float | None = None
+    p95: float | None = None
+    empty_string_count: int = 0
+    empty_string_pct: float = 0.0
     most_common_values: list[tuple[Any, int]] = field(default_factory=list)
     detected_pattern: str | None = None  # email, uuid, url, phone, etc.
     pattern_match_pct: float | None = None

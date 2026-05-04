@@ -5,14 +5,16 @@ from datetime import datetime, timedelta, timezone
 from dqlens.models import (ColumnProfile, DatabaseProfile, ForeignKeyInfo,
                            TableProfile)
 from dqlens.rules.base import Dimension, RuleContext
-from dqlens.rules.completeness import (EmptyTableRule, NotNullRule,
-                                       NullRateDriftRule)
+from dqlens.rules.completeness import (EmptyStringRule, EmptyTableRule,
+                                       NotNullRule, NullRateDriftRule)
+from dqlens.rules.consistency import SchemaDriftRule
 from dqlens.rules.registry import (get_all_rules, get_column_rules,
                                    get_table_rules)
 from dqlens.rules.timeliness import FreshnessRule
 from dqlens.rules.uniqueness import UniqueColumnRule, UniquenessLostRule
-from dqlens.rules.validity import (AllowedValuesRule, PatternMatchRule,
-                                   PositiveValuesRule, SemanticColumnRule)
+from dqlens.rules.validity import (AllowedValuesRule, OutlierRule,
+                                   PatternMatchRule, PositiveValuesRule,
+                                   SemanticColumnRule)
 
 
 def _col(**kwargs):
@@ -346,3 +348,200 @@ class TestGenerateHasReason:
                         result = rule.generate(ctx)
                         if isinstance(result, dict) and result:
                             assert "reason" in result, f"{rule.name} on {col.name} missing reason"
+
+
+class TestEmptyStringRule:
+    def test_applies_when_empty_strings_exist(self):
+        rule = EmptyStringRule()
+        col = _col(
+            name="notes", data_type="text",
+            empty_string_count=50, empty_string_pct=5.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        assert rule.applies_to(ctx) is True
+
+    def test_does_not_apply_when_no_empty_strings(self):
+        rule = EmptyStringRule()
+        col = _col(
+            name="notes", data_type="text",
+            empty_string_count=0, empty_string_pct=0.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        assert rule.applies_to(ctx) is False
+
+    def test_low_rate_passes(self):
+        rule = EmptyStringRule()
+        col = _col(
+            name="notes", data_type="text",
+            empty_string_count=20, empty_string_pct=2.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert result.passed
+
+    def test_high_rate_flags_medium(self):
+        rule = EmptyStringRule()
+        col = _col(
+            name="notes", data_type="text",
+            empty_string_count=350, empty_string_pct=35.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert hasattr(result, "severity")
+        assert result.severity.value == "MEDIUM"
+
+    def test_very_high_rate_flags_high(self):
+        rule = EmptyStringRule()
+        col = _col(
+            name="notes", data_type="text",
+            empty_string_count=700, empty_string_pct=70.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert hasattr(result, "severity")
+        assert result.severity.value == "HIGH"
+
+
+class TestOutlierRule:
+    def test_applies_when_percentiles_available(self):
+        rule = OutlierRule()
+        col = _col(
+            name="amount", p25=10.0, p50=50.0, p75=90.0, p95=120.0,
+            min_value=5.0, max_value=130.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        assert rule.applies_to(ctx) is True
+
+    def test_does_not_apply_without_percentiles(self):
+        rule = OutlierRule()
+        col = _col(name="amount", min_value=5.0, max_value=130.0, is_primary_key=False)
+        ctx = RuleContext(table=_table(), column=col)
+        assert rule.applies_to(ctx) is False
+
+    def test_no_outliers_passes(self):
+        rule = OutlierRule()
+        # IQR = 90 - 10 = 80, lower = 10 - 120 = -110, upper = 90 + 120 = 210
+        col = _col(
+            name="amount", p25=10.0, p50=50.0, p75=90.0, p95=120.0,
+            min_value=5.0, max_value=130.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert result.passed
+
+    def test_outlier_above_flags(self):
+        rule = OutlierRule()
+        # IQR = 90 - 10 = 80, upper = 90 + 120 = 210
+        # max_value = 500 > 210, so outlier
+        col = _col(
+            name="amount", p25=10.0, p50=50.0, p75=90.0, p95=120.0,
+            min_value=5.0, max_value=500.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert hasattr(result, "severity")
+        assert "above upper bound" in result.message
+
+    def test_outlier_below_flags(self):
+        rule = OutlierRule()
+        # IQR = 90 - 10 = 80, lower = 10 - 120 = -110
+        # min_value = -200 < -110, so outlier
+        col = _col(
+            name="amount", p25=10.0, p50=50.0, p75=90.0, p95=120.0,
+            min_value=-200.0, max_value=100.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is not None
+        assert hasattr(result, "severity")
+        assert "below lower bound" in result.message
+
+    def test_zero_iqr_skips(self):
+        rule = OutlierRule()
+        # p25 == p75, IQR = 0, can't compute bounds
+        col = _col(
+            name="amount", p25=50.0, p50=50.0, p75=50.0, p95=50.0,
+            min_value=50.0, max_value=50.0,
+            is_primary_key=False, is_unique=False,
+        )
+        ctx = RuleContext(table=_table(), column=col)
+        result = rule.evaluate(ctx)
+        assert result is None
+
+
+class TestSchemaDriftRule:
+    def test_applies_when_baseline_exists(self):
+        rule = SchemaDriftRule()
+        table = _table(columns=[_col(name="id"), _col(name="email", is_primary_key=False)])
+        baseline = _table(columns=[_col(name="id"), _col(name="email", is_primary_key=False)])
+        ctx = RuleContext(table=table, baseline_table=baseline)
+        assert rule.applies_to(ctx) is True
+
+    def test_does_not_apply_without_baseline(self):
+        rule = SchemaDriftRule()
+        table = _table(columns=[_col(name="id")])
+        ctx = RuleContext(table=table, baseline_table=None)
+        assert rule.applies_to(ctx) is False
+
+    def test_no_drift_passes(self):
+        rule = SchemaDriftRule()
+        cols = [_col(name="id"), _col(name="email", is_primary_key=False, is_unique=False)]
+        table = _table(columns=cols)
+        baseline = _table(columns=cols)
+        ctx = RuleContext(table=table, baseline_table=baseline)
+        results = rule.evaluate(ctx)
+        assert len(results) == 1
+        assert results[0].passed
+
+    def test_detects_column_added(self):
+        rule = SchemaDriftRule()
+        baseline = _table(columns=[_col(name="id")])
+        current = _table(columns=[_col(name="id"), _col(name="new_col", is_primary_key=False, is_unique=False)])
+        ctx = RuleContext(table=current, baseline_table=baseline)
+        results = rule.evaluate(ctx)
+        findings = [r for r in results if hasattr(r, "severity")]
+        assert len(findings) == 1
+        assert "added" in findings[0].message
+        assert findings[0].column == "new_col"
+
+    def test_detects_column_removed(self):
+        rule = SchemaDriftRule()
+        baseline = _table(columns=[_col(name="id"), _col(name="old_col", is_primary_key=False, is_unique=False)])
+        current = _table(columns=[_col(name="id")])
+        ctx = RuleContext(table=current, baseline_table=baseline)
+        results = rule.evaluate(ctx)
+        findings = [r for r in results if hasattr(r, "severity")]
+        assert len(findings) == 1
+        assert "removed" in findings[0].message
+        assert findings[0].severity.value == "HIGH"
+
+    def test_detects_type_change(self):
+        rule = SchemaDriftRule()
+        baseline = _table(columns=[
+            _col(name="id"),
+            _col(name="amount", data_type="integer", is_primary_key=False, is_unique=False),
+        ])
+        current = _table(columns=[
+            _col(name="id"),
+            _col(name="amount", data_type="text", is_primary_key=False, is_unique=False),
+        ])
+        ctx = RuleContext(table=current, baseline_table=baseline)
+        results = rule.evaluate(ctx)
+        findings = [r for r in results if hasattr(r, "severity")]
+        assert len(findings) == 1
+        assert "type changed" in findings[0].message
+        assert findings[0].severity.value == "HIGH"

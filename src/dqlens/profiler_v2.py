@@ -181,6 +181,14 @@ def _profile_table(
             max_value=details.get("max_value"),
             mean_value=details.get("mean_value"),
             stddev=details.get("stddev"),
+            p25=details.get("p25"),
+            p50=details.get("p50"),
+            p75=details.get("p75"),
+            p95=details.get("p95"),
+            empty_string_count=details.get("empty_string_count", 0),
+            empty_string_pct=round(
+                details.get("empty_string_count", 0) / (total - null_count) * 100, 2
+            ) if (total - null_count) > 0 and details.get("empty_string_count", 0) > 0 else 0.0,
             detected_pattern=detected_pattern,
             pattern_match_pct=round(pattern_match_pct, 1) if pattern_match_pct else None,
             is_primary_key=is_pk,
