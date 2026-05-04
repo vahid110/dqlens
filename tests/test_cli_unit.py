@@ -10,7 +10,7 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert "dqlens, version" in result.output
 
     def test_help(self):
         runner = CliRunner()
