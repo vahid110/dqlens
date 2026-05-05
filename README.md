@@ -1,5 +1,8 @@
 # DQLens
 
+[![CI](https://github.com/vahid110/dqlens/actions/workflows/ci.yml/badge.svg)](https://github.com/vahid110/dqlens/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/dqlens)](https://pypi.org/project/dqlens/)
+
 > Find data problems automatically. No config, no test writing.
 
 DQLens auto-generates data quality tests by profiling your database. No YAML, no Python, no configuration files. Just point it at your database and get instant visibility into data quality issues.
