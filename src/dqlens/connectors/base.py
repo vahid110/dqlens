@@ -130,3 +130,13 @@ class BaseConnector(ABC):
         PostgreSQL overrides with TABLESAMPLE BERNOULLI.
         """
         return f"LIMIT {sample_size}"
+
+    def get_most_common_values(
+        self, conn: Any, schema: str, table: str, column: str, limit: int = 20,
+    ) -> list[tuple[Any, int]]:
+        """Get the most common values and their counts for a column.
+
+        Returns list of (value, count) tuples, ordered by count descending.
+        Default implementation uses GROUP BY. Override for DB-specific optimizations.
+        """
+        return []

@@ -167,6 +167,19 @@ def _profile_table(
                 db, conn, schema, table_name, col_name
             )
 
+        # Collect most common values for low-cardinality columns
+        most_common_values: list[tuple[Any, int]] = []
+        if (
+            distinct_count > 0
+            and distinct_count <= 20
+            and not is_pk
+            and distinct_pct < 5
+            and hasattr(db, "get_most_common_values")
+        ):
+            most_common_values = db.get_most_common_values(
+                conn, schema, table_name, col_name, limit=20
+            )
+
         col_profile = ColumnProfile(
             name=col_name,
             data_type=data_type,
@@ -189,6 +202,7 @@ def _profile_table(
             empty_string_pct=round(
                 details.get("empty_string_count", 0) / (total - null_count) * 100, 2
             ) if (total - null_count) > 0 and details.get("empty_string_count", 0) > 0 else 0.0,
+            most_common_values=most_common_values,
             detected_pattern=detected_pattern,
             pattern_match_pct=round(pattern_match_pct, 1) if pattern_match_pct else None,
             is_primary_key=is_pk,

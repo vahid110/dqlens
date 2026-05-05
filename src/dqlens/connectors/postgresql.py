@@ -341,6 +341,26 @@ class PostgreSQLConnector(BaseConnector):
 
         return result
 
+    def get_most_common_values(
+        self, conn: Any, schema: str, table: str, column: str, limit: int = 20,
+    ) -> list[tuple[Any, int]]:
+        """Get most common values using GROUP BY."""
+        sch = psycopg2.extensions.quote_ident(schema, conn.cursor())
+        tbl = psycopg2.extensions.quote_ident(table, conn.cursor())
+        col = psycopg2.extensions.quote_ident(column, conn.cursor())
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {col}::text, COUNT(*) as cnt "
+                f"FROM {sch}.{tbl} "
+                f"WHERE {col} IS NOT NULL "
+                f"GROUP BY {col} "
+                f"ORDER BY cnt DESC "
+                f"LIMIT %s",
+                (limit,),
+            )
+            return [(row[0], row[1]) for row in cur.fetchall()]
+
 
 def _safe_float(val: Any) -> float | None:
     if val is None:
