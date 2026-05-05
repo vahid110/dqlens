@@ -88,6 +88,17 @@ for table in results:
 - MySQL
 - Parquet, CSV (coming soon)
 
+## dbt Integration
+
+Using dbt? [dbt-dqlens](https://github.com/vahid110/dbt-dqlens) auto-generates native dbt test YAML from profiling results. No more writing `not_null` and `unique` by hand.
+
+```bash
+pip install dbt-dqlens
+dqlens-dbt profile        # profiles models using your profiles.yml
+dqlens-dbt generate-tests # outputs _dqlens_tests.yml
+dbt test --select tag:dqlens
+```
+
 ## Development
 
 ```bash
