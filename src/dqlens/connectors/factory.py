@@ -53,7 +53,24 @@ def get_connector(connection_url: str) -> BaseConnector:
         from dqlens.connectors.mysql import MySQLConnector
         return MySQLConnector(url)
 
+    # DuckDB — URL or file path
+    if url.startswith("duckdb:///"):
+        db_path = url.replace("duckdb:///", "", 1)
+        from dqlens.connectors.duckdb import DuckDBConnector
+        return DuckDBConnector(db_path)
+
+    if url.startswith("duckdb://"):
+        db_path = url.replace("duckdb://", "", 1)
+        from dqlens.connectors.duckdb import DuckDBConnector
+        return DuckDBConnector(db_path)
+
+    # File path ending in .duckdb
+    path = Path(url)
+    if path.suffix in (".duckdb",):
+        from dqlens.connectors.duckdb import DuckDBConnector
+        return DuckDBConnector(str(path))
+
     raise ValueError(
         f"Unsupported connection URL: {url}\n"
-        f"Supported schemes: postgresql://, sqlite:///, *.db, *.sqlite"
+        f"Supported schemes: postgresql://, sqlite:///, duckdb:///, mysql://, *.db, *.sqlite, *.duckdb"
     )

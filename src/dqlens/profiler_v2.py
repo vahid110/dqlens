@@ -86,19 +86,29 @@ def profile_database(
     row_estimates = {t["table_name"]: t["estimated_rows"] for t in all_tables}
 
     table_profiles = []
+    skipped_tables: list[tuple[str, str]] = []
     for table_name in table_names:
-        profile = _profile_table(
-            db=db,
-            conn=conn,
-            schema=schema,
-            table_name=table_name,
-            estimated_rows=row_estimates.get(table_name, 0),
-            foreign_keys=fk_lookup.get(table_name, []),
-            primary_key_columns=primary_keys.get(table_name, []),
-            unique_columns=unique_indexes.get(table_name, set()),
-            quick=quick,
-        )
-        table_profiles.append(profile)
+        try:
+            profile = _profile_table(
+                db=db,
+                conn=conn,
+                schema=schema,
+                table_name=table_name,
+                estimated_rows=row_estimates.get(table_name, 0),
+                foreign_keys=fk_lookup.get(table_name, []),
+                primary_key_columns=primary_keys.get(table_name, []),
+                unique_columns=unique_indexes.get(table_name, set()),
+                quick=quick,
+            )
+            table_profiles.append(profile)
+        except Exception as e:
+            skipped_tables.append((table_name, str(e)))
+            continue
+
+    if skipped_tables:
+        import sys
+        for tname, err in skipped_tables:
+            print(f"  Warning: skipped table '{tname}': {err}", file=sys.stderr)
 
     return DatabaseProfile(
         connection_url="",
