@@ -102,6 +102,20 @@ dqlens-dbt generate-tests # outputs _dqlens_tests.yml
 dbt test --select tag:dqlens
 ```
 
+## CI/CD Integration
+
+Add data quality checks to any GitHub Actions workflow with two lines:
+
+```yaml
+- uses: vahid110/dqlens-action@v1
+  with:
+    database_url: ${{ secrets.DATABASE_URL }}
+```
+
+Profiles your database, compares against baseline, fails the build if problems are found. Works with PostgreSQL, DuckDB, SQLite, MySQL.
+
+See [dqlens-action](https://github.com/vahid110/dqlens-action) for full options.
+
 ## Development
 
 ```bash
