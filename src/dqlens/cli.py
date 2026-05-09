@@ -142,6 +142,9 @@ def profile(
     mode_label = "[yellow]quick mode (sampled)[/yellow]" if quick else ""
     console.print(f"\n[bold]Profiling schema '{schema_name}'...[/bold] {mode_label}\n")
 
+    def _progress(table_name: str, current: int, total: int) -> None:
+        console.print(f"  Profiling [cyan]{table_name}[/cyan]... ({current}/{total})")
+
     try:
         db = get_connector(conn_url)
         with db.connect() as conn:
@@ -152,6 +155,7 @@ def profile(
                 tables=table_list,
                 exclude_tables=exclude_list,
                 quick=quick,
+                progress_callback=_progress,
             )
     except Exception as e:
         click.echo(f"Error connecting to database: {e}", err=True)
@@ -360,7 +364,50 @@ def ignore(key: str):
     add_ignore(key)
     click.echo(f"Ignored: {key}")
     click.echo("This finding will be suppressed in future runs.")
-    click.echo("To undo, edit .dqlens/ignores.yaml")
+    click.echo("To undo: dqlens unignore " + key)
+
+
+@main.command("ignore-list")
+def ignore_list():
+    """Show all currently ignored findings."""
+    from dqlens.config import load_ignores
+
+    ignores = load_ignores()
+    if not ignores:
+        click.echo("No ignored findings.")
+        return
+
+    click.echo(f"{len(ignores)} ignored finding(s):\n")
+    for key in sorted(ignores):
+        click.echo(f"  {key}")
+    click.echo(f"\nTo remove: dqlens unignore <key>")
+
+
+@main.command()
+@click.argument("key")
+def unignore(key: str):
+    """Remove a suppressed finding (re-enable it).
+
+    Example: dqlens unignore orders.email.null_anomaly
+    """
+    from pathlib import Path
+
+    import yaml
+
+    from dqlens.config import IGNORES_FILE, get_dqlens_dir, load_ignores
+
+    ignores = load_ignores()
+    if key not in ignores:
+        click.echo(f"Key '{key}' is not in the ignore list.", err=True)
+        sys.exit(1)
+
+    ignores.discard(key)
+    ignores_path = get_dqlens_dir() / IGNORES_FILE
+    with open(ignores_path, "w") as f:
+        yaml.dump({"ignored": sorted(ignores)}, f, default_flow_style=False)
+
+    click.echo(f"Removed: {key}")
+    click.echo("This finding will appear again in future runs.")
 
 
 def _mask_url(url: str) -> str:

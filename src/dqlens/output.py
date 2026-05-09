@@ -68,6 +68,7 @@ def _print_tabular(
         findings_table.add_column("Table", style="cyan", max_width=25)
         findings_table.add_column("Column", max_width=20)
         findings_table.add_column("Problem")
+        findings_table.add_column("Ignore key", style="dim", max_width=35)
 
         severity_styles = {
             Severity.HIGH: "bold red",
@@ -77,11 +78,19 @@ def _print_tabular(
 
         for table_name, f in all_findings:
             short_table = table_name.split(".")[-1] if "." in table_name else table_name
+            # Build ignore key: table.column.category
+            ignore_parts = [short_table]
+            if f.column:
+                ignore_parts.append(f.column)
+            ignore_parts.append(f.category.value)
+            ignore_key = ".".join(ignore_parts)
+
             findings_table.add_row(
                 Text(f.severity.value, style=severity_styles.get(f.severity, "")),
                 short_table,
                 f.column or "-",
                 f.message,
+                ignore_key,
             )
 
         console.print(findings_table)

@@ -42,6 +42,7 @@ def profile_database(
     tables: list[str] | None = None,
     exclude_tables: list[str] | None = None,
     quick: bool = False,
+    progress_callback: Any = None,
 ) -> DatabaseProfile:
     """Profile all tables in a database schema.
 
@@ -52,6 +53,7 @@ def profile_database(
         tables: If provided, only profile these tables.
         exclude_tables: If provided, exclude these tables (supports glob patterns).
         quick: If True, sample data instead of scanning full tables.
+        progress_callback: Optional callable(table_name, current, total) for progress reporting.
 
     Returns:
         DatabaseProfile with all table profiles.
@@ -87,7 +89,10 @@ def profile_database(
 
     table_profiles = []
     skipped_tables: list[tuple[str, str]] = []
-    for table_name in table_names:
+    total_tables = len(table_names)
+    for idx, table_name in enumerate(table_names, 1):
+        if progress_callback:
+            progress_callback(table_name, idx, total_tables)
         try:
             profile = _profile_table(
                 db=db,
